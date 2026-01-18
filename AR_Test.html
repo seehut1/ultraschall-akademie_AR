@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <!-- 1. Load A-Frame (The 3D engine) -->
+    <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
+    <!-- 2. Load MindAR (The Computer Vision engine) -->
+    <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.2/dist/mindar-image-aframe.prod.js"></script>
+</head>
+<body>
+
+<!-- 3. Configure the Scene
+     mindar-image="imageTargetSrc: ./targets.mind" -> This loads your compiled file
+-->
+<a-scene mindar-image="imageTargetSrc: ./bread_cat.mind;"
+         color-space="sRGB"
+         renderer="colorManagement: true, physicallyCorrectLights"
+         vr-mode-ui="enabled: false"
+         device-orientation-permission-ui="enabled: false">
+
+    <!-- 4. Load the Video Asset -->
+    <a-assets>
+        <video id="vid" src="./my_video.mp4" loop="true" crossorigin="anonymous"></video>
+    </a-assets>
+
+    <!-- 5. The Camera (User's Phone) -->
+    <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
+
+    <!-- 6. The Logic Hook
+         targetIndex: 0 means "The first image inside the targets.mind file"
+    -->
+    <a-entity mindar-image-target="targetIndex: 0">
+
+        <!-- 7. The Overlay
+             This places a plane exactly over the image and paints the video onto it.
+        -->
+        <a-video src="#vid" position="0 0 0" height="1" width="1" rotation="0 0 0"></a-video>
+
+    </a-entity>
+</a-scene>
+</body>
+</html>
