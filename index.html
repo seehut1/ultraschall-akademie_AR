@@ -2,67 +2,78 @@
 <html>
 <head>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <!-- 1. Load A-Frame (The 3D engine) -->
     <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
-    <!-- 2. Load MindAR (The Computer Vision engine) -->
     <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.2/dist/mindar-image-aframe.prod.js"></script>
 </head>
 <body>
 
-<!-- 3. Configure the Scene
-     mindar-image="imageTargetSrc: ./targets.mind" -> This loads your compiled file
--->
-<a-scene mindar-image="imageTargetSrc: ./bread_cat.mind;"
+<!-- Load the single .mind file that contains ALL your images -->
+<a-scene mindar-image="imageTargetSrc: ./targets.mind;"
          color-space="sRGB"
          renderer="colorManagement: true, physicallyCorrectLights"
          vr-mode-ui="enabled: false"
          device-orientation-permission-ui="enabled: false">
 
-    <!-- 4. Load the Video Asset -->
     <a-assets>
-        <video id="vid"
-               src="./cat_bread_video.mp4"
-               autoplay="true"
-               loop="true"
-               muted="true"
-               playsinline
-               webkit-playsinline
-               crossorigin="anonymous"></video>
+        <!-- VIDEO 1 (Corresponds to Image 0) -->
+        <video id="vid0" src="./cat_bread_video.mp4" autoplay="false" loop="true" muted="true" playsinline webkit-playsinline crossorigin="anonymous"></video>
+
+        <!-- VIDEO 2 (Corresponds to Image 1) -->
+        <video id="vid1" src="./ultrasound_test.mp4" autoplay="false" loop="true" muted="true" playsinline webkit-playsinline crossorigin="anonymous"></video>
+
     </a-assets>
 
-    <!-- 5. The Camera (User's Phone) -->
     <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
 
-    <!-- 6. The Logic Hook
-         targetIndex: 0 means "The first image inside the targets.mind file"
-    -->
-    <a-entity mindar-image-target="targetIndex: 0">
-
-        <!-- 7. The Overlay
-             This places a plane exactly over the image and paints the video onto it.
-        -->
-        <a-video src="#vid" position="0 0 0" height="1" width="1" rotation="0 0 0"></a-video>
-
+    <!-- ENTITY 1 (Target Index 0) -->
+    <!-- We add a custom class "ar-target" to make it easy to find in JS -->
+    <a-entity mindar-image-target="targetIndex: 0" class="ar-target">
+        <a-video src="#vid0" position="0 0 0" height="1" width="1" rotation="0 0 0"></a-video>
     </a-entity>
+
+    <!-- ENTITY 2 (Target Index 1) -->
+    <a-entity mindar-image-target="targetIndex: 1" class="ar-target">
+        <a-video src="#vid1" position="0 0 0" height="1" width="1" rotation="0 0 0"></a-video>
+    </a-entity>
+
+    <!-- ENTITY 3 (Target Index 2) -->
+    <a-entity mindar-image-target="targetIndex: 2" class="ar-target">
+        <a-video src="#vid2" position="0 0 0" height="1" width="1" rotation="0 0 0"></a-video>
+    </a-entity>
+
 </a-scene>
+
 <script>
-    // Get the video element
-    const video = document.querySelector("#vid");
+    // 1. Select ALL entities that have the class "ar-target"
+    const targets = document.querySelectorAll('.ar-target');
 
-    // Get the target element (the book cover)
-    const target = document.querySelector('[mindar-image-target]');
+    // 2. Loop through them (like a Java for-each)
+    targets.forEach((target) => {
 
-    // When the camera sees the book
-    target.addEventListener("targetFound", event => {
-        console.log("Book found - playing video");
-        video.play();
-    });
+        // Find the specific <a-video> inside this target
+        const videoElement = target.querySelector('a-video');
 
-    // When the camera loses the book
-    target.addEventListener("targetLost", event => {
-        console.log("Book lost - pausing video");
-        video.pause();
+        // Get the ID of the video from the 'src' attribute (e.g., "#vid0")
+        const videoId = videoElement.getAttribute('src');
+
+        // Select the actual HTML video tag using that ID
+        const video = document.querySelector(videoId);
+
+        // Add the Found Listener
+        target.addEventListener("targetFound", event => {
+            console.log("Found target, playing: " + videoId);
+            video.currentTime = 0; // Reset time
+            video.play();
+        });
+
+        // Add the Lost Listener
+        target.addEventListener("targetLost", event => {
+            console.log("Lost target, pausing: " + videoId);
+            video.pause();
+            video.currentTime = 0; // Reset time
+        });
     });
 </script>
+
 </body>
 </html>
