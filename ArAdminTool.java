@@ -7,7 +7,6 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
 import java.util.Arrays;
-import java.util.Comparator;
 import java.util.List;
 
 public class ArAdminTool extends JFrame {
@@ -38,8 +37,8 @@ public class ArAdminTool extends JFrame {
         // 2. Control Panel
         JPanel controlPanel = new JPanel(new FlowLayout());
         JButton saveButton = new JButton("Save & Add Pair");
-        JButton compilerButton = new JButton("1. Open Web Compiler");
-        JButton pushButton = new JButton("2. Git Push");
+        JButton compilerButton = new JButton("1. Open .mind file Compiler");
+        JButton pushButton = new JButton("2. Upload files");
 
         controlPanel.add(saveButton);
         controlPanel.add(new JSeparator(SwingConstants.VERTICAL));
@@ -170,23 +169,50 @@ public class ArAdminTool extends JFrame {
         return fileName.substring(fileName.lastIndexOf('.') + 1);
     }
 
-    private void performGitPush() throws IOException, InterruptedException {
-        // Simple command execution
-        Runtime rt = Runtime.getRuntime();
-        // 1. Add all
-        Process p1 = rt.exec("git add .");
-        p1.waitFor();
-        // 2. Commit
-        Process p2 = rt.exec(new String[]{"git", "commit", "-m", "Auto-added new AR content"});
-        p2.waitFor();
-        // 3. Push
-        Process p3 = rt.exec("git push");
-        int exitVal = p3.waitFor();
+    private void performGitPush() {
+        try {
+            // 1. Add
+            runCommand("git", "add", ".");
 
-        if (exitVal == 0) {
-            JOptionPane.showMessageDialog(this, "Pushed to GitHub successfully! CI/CD will deploy shortly.");
-        } else {
-            JOptionPane.showMessageDialog(this, "Push failed. Check console/credentials.");
+            // 2. Commit
+            // We ignore the error here in case there is nothing to commit
+            try {
+                runCommand("git", "commit", "-m", "Auto-added new AR content");
+            } catch (Exception ignored) {
+                System.out.println("Nothing to commit, proceeding to push...");
+            }
+
+            // 3. Push
+            runCommand("git", "push");
+
+            JOptionPane.showMessageDialog(this, "Success! Pushed to GitHub.");
+
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            JOptionPane.showMessageDialog(this, "Git Failed!\nCheck your IDE Console for the exact error.\n" + ex.getMessage());
+        }
+    }
+
+    // Helper to run commands and print errors to console
+    private void runCommand(String... command) throws IOException, InterruptedException {
+        ProcessBuilder pb = new ProcessBuilder(command);
+        pb.directory(new File(".")); // Ensure we are in the project root
+        pb.redirectErrorStream(true); // Merge error output with standard output
+
+        System.out.println("Running: " + Arrays.toString(command));
+        Process p = pb.start();
+
+        // Read the output so we can see what Git is saying
+        try (var reader = new java.io.BufferedReader(new java.io.InputStreamReader(p.getInputStream()))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                System.out.println("[GIT] " + line);
+            }
+        }
+
+        int exitCode = p.waitFor();
+        if (exitCode != 0) {
+            throw new IOException("Command failed with exit code " + exitCode);
         }
     }
 
